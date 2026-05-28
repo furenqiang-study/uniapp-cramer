@@ -117,6 +117,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
+import { login as loginApi } from '@/api/auth'
 
 // ============ 响应式数据 ============
 const loginForm = reactive({
@@ -137,7 +138,7 @@ const canLogin = computed(() => {
 })
 
 // ============ 方法 ============
-function handleLogin() {
+async function handleLogin() {
   if (!canLogin.value) return
 
   if (!agreeTerms.value) {
@@ -147,25 +148,21 @@ function handleLogin() {
 
   loginLoading.value = true
 
-  // 模拟登录（后续对接真实接口）
-  setTimeout(() => {
+  try {
+    const res = await loginApi(loginForm.username, loginForm.password)
     loginLoading.value = false
-    if (loginForm.username === 'admin' && loginForm.password === 'admin') {
-      uni.showToast({ title: '登录成功', icon: 'success' })
-      // 存储登录状态
-      uni.setStorageSync('token', 'mock-token-xxx')
-      uni.setStorageSync('userInfo', JSON.stringify({
-        username: loginForm.username,
-        nickname: '管理员'
-      }))
-      // 跳转首页
-      setTimeout(() => {
-        uni.switchTab({ url: '/pages/home/home' })
-      }, 500)
-    } else {
-      uni.showToast({ title: '用户名或密码错误', icon: 'none' })
-    }
-  }, 1500)
+    uni.showToast({ title: '登录成功', icon: 'success' })
+    // 存储登录状态
+    uni.setStorageSync('token', res.data.access_token)
+    uni.setStorageSync('userInfo', JSON.stringify(res.data.user))
+    // 跳转首页
+    setTimeout(() => {
+      uni.switchTab({ url: '/pages/home/home' })
+    }, 500)
+  } catch (err: any) {
+    loginLoading.value = false
+    // 错误已在 request.ts 中统一处理
+  }
 }
 
 function handleForgotPassword() {

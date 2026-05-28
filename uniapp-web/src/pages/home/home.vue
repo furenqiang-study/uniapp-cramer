@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { getHomeStats } from '@/api/home'
 
 // ============ 响应式数据 ============
 const userInfo = reactive({
@@ -113,7 +114,29 @@ onMounted(() => {
       userInfo.nickname = info.nickname || '管理员'
     } catch (e) {}
   }
+
+  // 加载统计数据
+  loadStats()
 })
+
+async function loadStats() {
+  try {
+    const res = await getHomeStats()
+    if (res.data) {
+      statsData.value[0].value = String(res.data.menuCount || 0)
+      statsData.value[1].value = String(res.data.userCount || 0)
+      statsData.value[2].value = String(res.data.todayLogCount || 0)
+      statsData.value[3].value = String(res.data.logCount || 0)
+      if (res.data.recentLogins) {
+        recentList.value = res.data.recentLogins.map((log: any) => ({
+          title: log.detail || log.username + ' 登录了系统',
+          time: log.created_at || '',
+          color: '#ff6b35'
+        }))
+      }
+    }
+  } catch (e) {}
+}
 
 // ============ 方法 ============
 function goToProfile() {

@@ -56,9 +56,6 @@
               <view class="menu-card-info">
                 <view class="menu-card-name-row">
                   <text class="menu-card-name">{{ item.name }}</text>
-                  <view class="menu-type-tag" :class="'type-' + item.type">
-                    <text class="menu-type-text">{{ typeMap[item.type] }}</text>
-                  </view>
                 </view>
                 <text class="menu-card-path">{{ item.path }}</text>
               </view>
@@ -176,40 +173,13 @@
             />
           </view>
 
-          <!-- 菜单类型 -->
-          <view class="form-item">
-            <text class="form-label">菜单类型</text>
-            <view class="type-picker">
-              <view
-                v-for="opt in typeOptions"
-                :key="opt.value"
-                class="type-option"
-                :class="{ active: formData.type === opt.value }"
-                @tap="formData.type = opt.value"
-              >
-                <text class="type-option-text">{{ opt.label }}</text>
-              </view>
-            </view>
-          </view>
-
-          <!-- 权限标识 -->
-          <view class="form-item">
-            <text class="form-label">权限标识</text>
-            <input
-              class="form-input"
-              v-model="formData.permission"
-              placeholder="如：system:user:list"
-              placeholder-class="form-placeholder"
-            />
-          </view>
-
           <!-- 排序 -->
           <view class="form-item">
             <text class="form-label">排序</text>
             <input
               class="form-input"
               type="number"
-              v-model="formData.sort"
+              v-model="formData.sort_order"
               placeholder="数字越小越靠前"
               placeholder-class="form-placeholder"
             />
@@ -254,43 +224,29 @@ import {
   updateMenu,
   deleteMenu,
   type MenuItem
-} from '@/api/mock/menu-mock'
+} from '@/api/menu'
 
 // ============ 状态 ============
 const loading = ref(false)
 const menuList = ref<MenuItem[]>([])
 const searchKeyword = ref('')
-const expandedIds = ref<string[]>([])
+const expandedIds = ref<number[]>([])
 const scrollTop = ref(0)
 const modalVisible = ref(false)
 const isEdit = ref(false)
-const editingId = ref('')
+const editingId = ref(0)
 
 // 表单数据
 const formData = reactive({
   name: '',
   icon: '📄',
   path: '',
-  parentId: null as string | null,
-  type: 2 as 1 | 2 | 3,
-  permission: '',
-  sort: 0,
+  parent_id: 0,
+  sort_order: 0,
   status: 1 as 0 | 1
 })
 
 // 常量
-const typeMap: Record<number, string> = {
-  1: '目录',
-  2: '菜单',
-  3: '按钮'
-}
-
-const typeOptions = [
-  { label: '目录', value: 1 },
-  { label: '菜单', value: 2 },
-  { label: '按钮', value: 3 }
-]
-
 const iconOptions = [
   '📋', '👤', '🎭', '📊', '📈', '📑', '📝', '📄',
   '🏷️', '💰', '🛒', '💸', '🎯', '🎫', '⚙️', '🔔',
@@ -321,7 +277,8 @@ onMounted(() => {
 async function loadMenuData() {
   loading.value = true
   try {
-    menuList.value = await getMenuTree()
+    const res = await getMenuTree()
+    menuList.value = res.data || []
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' })
   } finally {
@@ -337,7 +294,7 @@ function handleSearch() {
   // 实时搜索，computed 已处理
 }
 
-function toggleExpand(id: string) {
+function toggleExpand(id: number) {
   const index = expandedIds.value.indexOf(id)
   if (index > -1) {
     expandedIds.value.splice(index, 1)
@@ -354,18 +311,16 @@ function resetForm() {
   formData.name = ''
   formData.icon = '📄'
   formData.path = ''
-  formData.parentId = null
-  formData.type = 2
-  formData.permission = ''
-  formData.sort = 0
+  formData.parent_id = 0
+  formData.sort_order = 0
   formData.status = 1
 }
 
-function showAddModal(parentId?: string | null) {
+function showAddModal(parentId?: number) {
   resetForm()
   isEdit.value = false
-  editingId.value = ''
-  formData.parentId = typeof parentId === 'string' ? parentId : null
+  editingId.value = 0
+  formData.parent_id = parentId || 0
   modalVisible.value = true
 }
 
@@ -376,10 +331,8 @@ function showEditModal(item: MenuItem) {
   formData.name = item.name
   formData.icon = item.icon
   formData.path = item.path
-  formData.parentId = item.parentId
-  formData.type = item.type
-  formData.permission = item.permission
-  formData.sort = item.sort
+  formData.parent_id = item.parent_id
+  formData.sort_order = item.sort_order
   formData.status = item.status
   modalVisible.value = true
 }
@@ -401,10 +354,10 @@ async function handleSubmit() {
 
   try {
     if (isEdit.value) {
-      await updateMenu(editingId.value, { ...formData })
+      await updateMenu(editingId.value, { name: formData.name, icon: formData.icon, path: formData.path, parent_id: formData.parent_id, sort_order: formData.sort_order, status: formData.status })
       uni.showToast({ title: '修改成功', icon: 'success' })
     } else {
-      await addMenu({ ...formData })
+      await addMenu({ name: formData.name, icon: formData.icon, path: formData.path, parent_id: formData.parent_id, sort_order: formData.sort_order, status: formData.status })
       uni.showToast({ title: '新增成功', icon: 'success' })
     }
     closeModal()
@@ -424,7 +377,7 @@ function handleToggleStatus(item: MenuItem) {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await updateMenu(item.id, { status: newStatus })
+          await updateMenu(item.id, { status: newStatus } as any)
           uni.showToast({ title: `${actionText}成功`, icon: 'success' })
           await loadMenuData()
         } catch (e) {
