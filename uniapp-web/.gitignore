@@ -1,0 +1,11 @@
+node_modules
+dist
+app/public/Esri
+docs/public/Esri
+.pnpm-store
+*.tar
+
+/app/public/assets/mars3d-cesium
+.eslintrc-auto-import.json
+auto-imports.d.ts
+components.d.ts

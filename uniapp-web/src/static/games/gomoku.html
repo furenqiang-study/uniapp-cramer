@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>五子棋</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#f5e6c8;font-family:'Arial',sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:10px}
+.header{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:500px;margin-bottom:8px}
+.title{font-size:36px;font-weight:bold;color:#5d4e37}
+.info{display:flex;gap:10px;align-items:center}
+.turn{padding:6px 16px;border-radius:20px;font-size:14px;font-weight:bold;color:#fff}
+.turn.black{background:#333}
+.turn.white{background:#999}
+.controls{display:flex;gap:10px;margin-bottom:10px;width:100%;max-width:500px}
+.btn{background:#8f7a66;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:14px;cursor:pointer}
+.btn:hover{background:#9f8b77}
+.select{padding:6px;border-radius:4px;font-size:13px}
+.board-wrap{position:relative;background:#d4a843;padding:15px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+canvas{display:block;cursor:pointer}
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:10}
+.overlay.show{display:flex}
+.overlay h2{font-size:36px;color:#fff;margin-bottom:20px;text-shadow:0 2px 4px rgba(0,0,0,0.5)}
+.overlay .btn{width:180px;font-size:18px;padding:12px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="title">五子棋</div>
+  <div class="info">
+    <div class="turn black" id="turn">⚫ 黑方落子</div>
+  </div>
+</div>
+<div class="controls">
+  <select class="select" id="mode" onchange="newGame()">
+    <option value="pve">人机对战</option>
+    <option value="pvp">双人对战</option>
+  </select>
+  <select class="select" id="difficulty">
+    <option value="1">简单</option>
+    <option value="2" selected>普通</option>
+    <option value="3">困难</option>
+  </select>
+  <button class="btn" onclick="undo()">悔棋</button>
+  <button class="btn" onclick="newGame()">新局</button>
+</div>
+<div class="board-wrap">
+  <canvas id="canvas"></canvas>
+</div>
+<div class="overlay" id="overlay">
+  <h2 id="msg"></h2>
+  <button class="btn" onclick="newGame()">再来一局</button>
+</div>
+
+<script>
+const N=15,S=30,PAD=15,W=N*S;
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+canvas.width=canvas.height=W;
+
+let board,turn,history,gameOver,undoCount;
+
+function newGame(){
+  board=Array(N).fill(null).map(()=>Array(N).fill(0));
+  turn=1;history=[];gameOver=false;undoCount=0;
+  document.getElementById('overlay').classList.remove('show');
+  draw();
+  updateTurn();
+}
+
+function draw(){
+  ctx.fillStyle='#d4a843';
+  ctx.fillRect(0,0,W,W);
+  ctx.strokeStyle='#5d4e37';ctx.lineWidth=1;
+  for(let i=0;i<N;i++){
+    ctx.beginPath();ctx.moveTo(PAD+i*S,PAD);ctx.lineTo(PAD+i*S,PAD+(N-1)*S);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(PAD,PAD+i*S);ctx.lineTo(PAD+(N-1)*S,PAD+i*S);ctx.stroke();
+  }
+  const stars=[[3,3],[3,11],[7,7],[11,3],[11,11]];
+  stars.forEach(([r,c])=>{ctx.fillStyle='#5d4e37';ctx.beginPath();ctx.arc(PAD+c*S,PAD+r*S,4,0,Math.PI*2);ctx.fill();});
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    if(board[r][c]){
+      ctx.beginPath();
+      ctx.arc(PAD+c*S,PAD+r*S,S/2-2,0,Math.PI*2);
+      if(board[r][c]===1){ctx.fillStyle='#111';ctx.fill();ctx.strokeStyle='#000';}
+      else{ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#ccc';}
+      ctx.lineWidth=1;ctx.stroke();
+    }
+  }
+  if(history.length){
+    const[lr,lc]=history[history.length-1];
+    ctx.fillStyle='rgba(255,0,0,0.6)';
+    ctx.beginPath();ctx.arc(PAD+lc*S,PAD+lr*S,4,0,Math.PI*2);ctx.fill();
+  }
+}
+
+function updateTurn(){
+  const el=document.getElementById('turn');
+  if(turn===1){el.className='turn black';el.textContent='⚫ 黑方落子';}
+  else{el.className='turn white';el.textContent='⚪ 白方落子';}
+}
+
+canvas.addEventListener('click',e=>{
+  if(gameOver)return;
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left,y=e.clientY-rect.top;
+  const c=Math.round((x-PAD)/S),r=Math.round((y-PAD)/S);
+  if(r<0||r>=N||c<0||c>=N||board[r][c])return;
+  place(r,c);
+});
+
+function place(r,c){
+  board[r][c]=turn;
+  history.push([r,c]);
+  draw();
+  if(checkWin(r,c)){
+    gameOver=true;
+    const winner=turn===1?'黑方':'白方';
+    setTimeout(()=>{document.getElementById('msg').textContent=winner+'获胜！🎉';document.getElementById('overlay').classList.add('show');},200);
+    return;
+  }
+  if(history.length===N*N){gameOver=true;setTimeout(()=>{document.getElementById('msg').textContent='平局！';document.getElementById('overlay').classList.add('show');},200);return;}
+  turn=turn===1?2:1;
+  updateTurn();
+  if(document.getElementById('mode').value==='pve'&&turn===2&&!gameOver){
+    setTimeout(aiMove,300);
+  }
+}
+
+function checkWin(r,c){
+  const d=[[0,1],[1,0],[1,1],[1,-1]];
+  const p=board[r][c];
+  for(const[dr,dc]of d){
+    let cnt=1;
+    for(let i=1;i<5;i++){const nr=r+dr*i,nc=c+dc*i;if(nr>=0&&nr<N&&nc>=0&&nc<N&&board[nr][nc]===p)cnt++;else break;}
+    for(let i=1;i<5;i++){const nr=r-dr*i,nc=c-dc*i;if(nr>=0&&nr<N&&nc>=0&&nc<N&&board[nr][nc]===p)cnt++;else break;}
+    if(cnt>=5)return true;
+  }
+  return false;
+}
+
+function aiMove(){
+  const diff=parseInt(document.getElementById('difficulty').value);
+  let best=null,bestScore=-Infinity;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    if(board[r][c])continue;
+    if(!hasNeighbor(r,c,2))continue;
+    const s=evalPos(r,c,diff);
+    if(s>bestScore){bestScore=s;best=[r,c];}
+  }
+  if(!best){const e=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!board[r][c])e.push([r,c]);best=e[Math.floor(Math.random()*e.length)];}
+  if(best)place(best[0],best[1]);
+}
+
+function hasNeighbor(r,c,dist){
+  for(let dr=-dist;dr<=dist;dr++)for(let dc=-dist;dc<=dist;dc++){
+    if(!dr&&!dc)continue;
+    const nr=r+dr,nc=c+dc;
+    if(nr>=0&&nr<N&&nc>=0&&nc<N&&board[nr][nc])return true;
+  }
+  return false;
+}
+
+function evalPos(r,c,depth){
+  let score=0;
+  board[r][c]=2;
+  if(checkWin(r,c)){board[r][c]=0;return 100000;}
+  score+=countLine(r,c,2)*10;
+  board[r][c]=0;
+  board[r][c]=1;
+  if(checkWin(r,c)){board[r][c]=0;return 50000;}
+  score+=countLine(r,c,1)*8;
+  board[r][c]=0;
+  const center=N/2;
+  score+=Math.max(0,5-Math.abs(r-center)-Math.abs(c-center));
+  return score;
+}
+
+function countLine(r,c,player){
+  const d=[[0,1],[1,0],[1,1],[1,-1]];
+  let total=0;
+  for(const[dr,dc]of d){
+    let cnt=1,open=0;
+    for(let i=1;i<5;i++){const nr=r+dr*i,nc=c+dc*i;if(nr<0||nr>=N||nc<0||nc>=N)break;if(board[nr][nc]===player)cnt++;else{if(!board[nr][nc])open++;break;}}
+    for(let i=1;i<5;i++){const nr=r-dr*i,nc=c-dc*i;if(nr<0||nr>=N||nc<0||nc>=N)break;if(board[nr][nc]===player)cnt++;else{if(!board[nr][nc])open++;break;}}
+    if(cnt>=5)total+=100;else if(cnt===4&&open>=1)total+=50;else if(cnt===3&&open>=2)total+=20;else if(cnt===3&&open===1)total+=10;else if(cnt===2&&open>=2)total+=5;
+  }
+  return total;
+}
+
+function undo(){
+  if(!history.length||gameOver)return;
+  if(undoCount>=3){alert('最多悔棋3次');return;}
+  const undoSteps=document.getElementById('mode').value==='pve'?2:1;
+  for(let i=0;i<undoSteps&&history.length;i++){
+    const[r,c]=history.pop();board[r][c]=0;undoCount++;
+  }
+  turn=history.length%2===0?1:2;
+  draw();updateTurn();
+}
+
+newGame();
+</script>
+</body>
+</html>

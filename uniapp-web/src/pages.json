@@ -1,0 +1,232 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/home",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "首页"
+      }
+    },
+    {
+      "path": "pages/profile/profile",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/menu/menu",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "菜单管理"
+      }
+    },
+    {
+      "path": "pages/camera/camera",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "相机拍照",
+        "app-plus": {
+          "titleNView": false
+        }
+      }
+    },
+    {
+      "path": "pages/laptop/laptop",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "笔记本智能推荐"
+      }
+    },
+    {
+      "path": "pages/laptop/result",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "推荐结果"
+      }
+    },
+    {
+      "path": "pages/entertainment/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "娱乐中心"
+      }
+    },
+    {
+      "path": "pages/entertainment/game",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "游戏中心"
+      }
+    },
+    {
+      "path": "pages/entertainment/music",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "音乐播放"
+      }
+    },
+    {
+      "path": "pages/entertainment/video",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "视频影音"
+      }
+    },
+    {
+      "path": "pages/entertainment/novel",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "网络小说"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/game2048",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "2048"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/gomoku",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "五子棋"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/match3",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "消消乐"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/minesweeper",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "扫雷"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/breakout",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "打砖块"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/coin-catch",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "接金币"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/snake",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "贪吃蛇"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/whack-mole",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "打地鼠"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/flappy-bird",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "飞鸟穿越"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/sliding-puzzle",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "数字拼图"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/balloon-shoot",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "射击气球"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/flag-match",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "国旗配对"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/checkers",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "跳棋"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/chinese-chess",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "中国象棋"
+      }
+    },
+    {
+      "path": "pages/entertainment/games/zjh-poker",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "炸金花"
+      }
+    },
+    {
+      "path": "pages/earth/roam-earth",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "漫游地球"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "管理系统",
+    "navigationBarBackgroundColor": "#ff6b35",
+    "backgroundColor": "#f5f6fa",
+    "app-plus": {
+      "titleNView": false
+    }
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#ff6b35",
+    "borderStyle": "white",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页",
+        "iconPath": "",
+        "selectedIconPath": ""
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "",
+        "selectedIconPath": ""
+      }
+    ]
+  }
+}

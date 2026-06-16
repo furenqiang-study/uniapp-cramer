@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  # 后端 API 服务
+  api:
+    build: .
+    container_name: xiaomi-uniapp-api
+    ports:
+      - "8022:8022"
+    environment:
+      - DB_HOST=120.48.35.111
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=123321Frq
+      - DB_NAME=study_uniapp
+    restart: always

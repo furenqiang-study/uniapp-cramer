@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>消消乐</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#667eea,#764ba2);font-family:'Arial',sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:10px}
+.header{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:360px;margin-bottom:8px;color:#fff}
+.title{font-size:32px;font-weight:bold}
+.scores{display:flex;gap:10px}
+.score-box{background:rgba(255,255,255,0.2);padding:6px 14px;border-radius:20px;text-align:center;font-size:14px}
+.controls{display:flex;gap:10px;margin-bottom:10px;width:100%;max-width:360px}
+.btn{background:rgba(255,255,255,0.3);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,0.5)}
+.board{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;background:rgba(255,255,255,0.15);padding:8px;border-radius:12px;width:100%;max-width:360px;aspect-ratio:1}
+.cell{border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;transition:transform .15s,opacity .15s;user-select:none}
+.cell:active{transform:scale(0.85)}
+.cell.selected{transform:scale(1.15);box-shadow:0 0 12px rgba(255,255,255,0.8)}
+.cell.matched{opacity:0;transform:scale(0)}
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:10}
+.overlay.show{display:flex}
+.overlay h2{font-size:36px;color:#fff;margin-bottom:10px}
+.overlay p{font-size:20px;color:#eee;margin-bottom:20px}
+.overlay .btn{width:200px;font-size:18px;padding:12px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="title">消消乐</div>
+  <div class="scores">
+    <div class="score-box">分数: <b id="score">0</b></div>
+    <div class="score-box">步数: <b id="moves">30</b></div>
+  </div>
+</div>
+<div class="controls">
+  <button class="btn" onclick="newGame()">新游戏</button>
+  <button class="btn" onclick="useHint()">💡 提示</button>
+</div>
+<div class="board" id="board"></div>
+<div class="overlay" id="overlay">
+  <h2 id="msg"></h2>
+  <p id="subMsg"></p>
+  <button class="btn" onclick="newGame()">再来一局</button>
+</div>
+
+<script>
+const ROWS=8,COLS=8,TYPES=['🍎','🍊','🍋','🍇','🍓','🫐'];
+let grid,selected,score,moves,animating;
+
+function newGame(){
+  score=0;moves=30;selected=null;animating=false;
+  document.getElementById('overlay').classList.remove('show');
+  do{grid=Array(ROWS).fill(null).map(()=>Array(COLS).fill(null).map(()=>TYPES[Math.floor(Math.random()*TYPES.length)]));}
+  while(hasMatches());
+  render();updateUI();
+}
+
+function render(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const div=document.createElement('div');
+    div.className='cell';
+    if(selected&&selected[0]===r&&selected[1]===c)div.classList.add('selected');
+    div.textContent=grid[r][c]||'';
+    div.onclick=()=>cellClick(r,c);
+    board.appendChild(div);
+  }
+}
+
+function updateUI(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('moves').textContent=moves;
+}
+
+function cellClick(r,c){
+  if(animating)return;
+  if(!selected){selected=[r,c];render();return;}
+  const[sr,sc]=selected;
+  if(sr===r&&sc===c){selected=null;render();return;}
+  if(Math.abs(sr-r)+Math.abs(sc-c)!==1){selected=[r,c];render();return;}
+  swap(sr,sc,r,c);
+  selected=null;
+  if(hasMatches()){
+    moves--;updateUI();
+    processMatches();
+  }else{
+    swap(sr,sc,r,c);render();
+  }
+}
+
+function swap(r1,c1,r2,c2){
+  const t=grid[r1][c1];grid[r1][c1]=grid[r2][c2];grid[r2][c2]=t;
+}
+
+function hasMatches(){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS-2;c++)
+    if(grid[r][c]&&grid[r][c]===grid[r][c+1]&&grid[r][c]===grid[r][c+2])return true;
+  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS-2;r++)
+    if(grid[r][c]&&grid[r][c]===grid[r+1][c]&&grid[r][c]===grid[r+2][c])return true;
+  return false;
+}
+
+function findMatches(){
+  const matched=new Set();
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS-2;c++)
+    if(grid[r][c]&&grid[r][c]===grid[r][c+1]&&grid[r][c]===grid[r][c+2])
+      {matched.add(r+','+c);matched.add(r+','+(c+1));matched.add(r+','+(c+2));}
+  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS-2;r++)
+    if(grid[r][c]&&grid[r][c]===grid[r+1][c]&&grid[r][c]===grid[r+2][c])
+      {matched.add(r+','+c);matched.add((r+1)+','+c);matched.add((r+2)+','+c);}
+  return [...matched].map(k=>k.split(',').map(Number));
+}
+
+function processMatches(){
+  animating=true;
+  const matches=findMatches();
+  if(!matches.length){
+    animating=false;
+    if(moves<=0){
+      setTimeout(()=>{document.getElementById('msg').textContent='游戏结束！';document.getElementById('subMsg').textContent='得分：'+score;document.getElementById('overlay').classList.add('show');},200);
+    }
+    return;
+  }
+  score+=matches.length*10;
+  matches.forEach(([r,c])=>{grid[r][c]=null;});
+  render();updateUI();
+  setTimeout(()=>{
+    dropDown();
+    fillEmpty();
+    render();
+    setTimeout(()=>processMatches(),200);
+  },300);
+}
+
+function dropDown(){
+  for(let c=0;c<COLS;c++){
+    let write=ROWS-1;
+    for(let r=ROWS-1;r>=0;r--){if(grid[r][c]){grid[write][c]=grid[r][c];if(write!==r)grid[r][c]=null;write--;}}
+  }
+}
+
+function fillEmpty(){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)
+    if(!grid[r][c])grid[r][c]=TYPES[Math.floor(Math.random()*TYPES.length)];
+}
+
+function useHint(){
+  if(animating)return;
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS-1;c++){
+    swap(r,c,r,c+1);if(hasMatches()){swap(r,c,r,c+1);selected=[r,c];render();return;}
+    swap(r,c,r,c+1);
+  }
+  for(let r=0;r<ROWS-1;r++)for(let c=0;c<COLS;c++){
+    swap(r,c,r+1,c);if(hasMatches()){swap(r,c,r+1,c);selected=[r,c];render();return;}
+    swap(r,c,r+1,c);
+  }
+}
+
+newGame();
+</script>
+</body>
+</html>
