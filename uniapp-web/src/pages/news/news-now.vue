@@ -13,22 +13,25 @@
       </view>
     </view>
 
-    <!-- Tab 切换 -->
-    <view class="tab-bar">
-      <view
-        v-for="tab in tabs"
-        :key="tab.key"
-        :class="['tab-item', { active: currentTab === tab.key }]"
-        @click="switchTab(tab.key)"
-      >
-        <text class="tab-icon">{{ tab.icon }}</text>
-        <text class="tab-label">{{ tab.label }}</text>
-      </view>
+    <!-- 新闻源切换 -->
+    <view class="source-bar">
+      <scroll-view scroll-x class="source-bar-scroll">
+        <view
+          v-for="source in sourceTabs"
+          :key="source.key"
+          :class="['source-tab', { active: currentSource === source.key }]"
+          :style="currentSource === source.key ? { background: source.color, color: '#fff' } : {}"
+          @click="switchSource(source.key)"
+        >
+          <text class="source-tab-name">{{ source.name }}</text>
+          <text class="source-tab-count" v-if="source.count">{{ source.count }}</text>
+        </view>
+      </scroll-view>
     </view>
 
-    <!-- 新闻源卡片列表 -->
+    <!-- 新闻列表 -->
     <scroll-view
-      class="source-scroll"
+      class="news-scroll"
       scroll-y
       :style="{ height: scrollHeight + 'px' }"
       refresher-enabled
@@ -48,51 +51,40 @@
         </view>
       </view>
 
-      <view v-else class="news-grid">
+      <view v-else class="news-list">
         <view
-          v-for="(source, idx) in groupedSources"
-          :key="source.name"
-          class="source-card"
-          :style="{ background: getSourceColor(idx) }"
+          v-for="(item, idx) in displayList"
+          :key="item.id || idx"
+          class="news-card"
+          @click="openNews(item)"
         >
-          <!-- 源头部 -->
-          <view class="source-header">
-            <view class="source-info">
-              <image
-                v-if="source.icon"
-                class="source-icon"
-                :src="source.icon"
-                mode="aspectFit"
-              />
-              <view v-else class="source-icon-placeholder">
-                <text class="source-icon-text">{{ source.name.charAt(0) }}</text>
-              </view>
-              <view class="source-meta">
-                <view class="source-name-row">
-                  <text class="source-name">{{ source.name }}</text>
-                </view>
-                <text class="source-time">{{ source.updateTime }}</text>
-              </view>
+          <!-- 卡片头部：来源标签 -->
+          <view class="card-source" :style="{ background: item.sourceBgColor || '#f0f0f0' }">
+            <view class="card-source-left">
+              <view class="source-dot" :style="{ background: item.sourceColor || '#999' }"></view>
+              <text class="source-label" :style="{ color: item.sourceColor || '#666' }">{{ item.sourceName }}</text>
+              <text class="source-type">{{ item.sourceLabel || '热点' }}</text>
             </view>
+            <text class="card-rank" :class="{ 'rank-hot': idx < 3 }">{{ idx + 1 }}</text>
           </view>
 
-          <!-- 新闻列表 -->
-          <scroll-view class="news-list" scroll-y>
-            <view
-              v-for="(item, itemIdx) in source.items"
-              :key="item.id || itemIdx"
-              class="news-item"
-              @click="openNews(item)"
-            >
-              <view class="news-rank">
-                <text class="rank-num">{{ itemIdx + 1 }}</text>
-              </view>
-              <view class="news-content">
-                <text class="news-title">{{ item.title }}</text>
-                <text v-if="item.engagement" class="news-engagement">{{ item.engagement }}</text>
-              </view>
+          <!-- 卡片内容 -->
+          <view class="card-body">
+            <view class="card-text">
+              <text class="card-title">{{ item.title }}</text>
+              <text v-if="item.description" class="card-desc">{{ item.description }}</text>
+              <text v-if="item.hotValue" class="card-hot">
+                <text class="hot-icon">🔥</text> {{ item.hotValue }}
+              </text>
             </view>
-          </scroll-view>
+            <image
+              v-if="item.image"
+              class="card-image"
+              :src="item.image"
+              mode="aspectFill"
+              @error="onImageError(idx)"
+            />
+          </view>
         </view>
       </view>
     </scroll-view>
@@ -101,97 +93,82 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { getNewsList } from '@/api/news'
+import { getNewsList, getNewsSources } from '@/api/news'
 
 interface NewsItem {
   id: string
   title: string
   url: string
-  mobileUrl: string
   description: string
-  source: string
-  icon: string
-  timestamp: string
-  engagement: string
+  hotValue: string
+  image: string
+  sourceKey: string
+  sourceName: string
+  sourceIcon: string
+  sourceColor: string
+  sourceBgColor: string
+  sourceLabel: string
+  tag?: string
+  icon?: string
 }
 
-interface SourceGroup {
+interface SourceTab {
+  key: string
   name: string
-  icon: string
-  updateTime: string
-  items: NewsItem[]
+  color: string
+  bgColor: string
+  label: string
+  count: number
 }
 
 const statusBarHeight = ref(20)
-const currentTab = ref('hottest')
+const currentSource = ref('')
 const loading = ref(false)
 const isRefreshing = ref(false)
 const newsList = ref<NewsItem[]>([])
+const sourceTabs = ref<SourceTab[]>([])
 const scrollHeight = ref(500)
 
-const tabs = [
-  { key: 'hottest', label: '最热', icon: '🔥' },
-  { key: 'latest', label: '最新', icon: '⚡' }
-]
-
-const sourceColors = [
-  'linear-gradient(135deg, #667eea33, #764ba233)',
-  'linear-gradient(135deg, #f093fb33, #f5576c33)',
-  'linear-gradient(135deg, #4facfe33, #00f2fe33)',
-  'linear-gradient(135deg, #43e97b33, #38f9d733)',
-  'linear-gradient(135deg, #fa709a33, #fee14033)',
-  'linear-gradient(135deg, #a18cd133, #fbc2eb33)',
-  'linear-gradient(135deg, #ffecd233, #fcb69f33)',
-  'linear-gradient(135deg, #ff9a9e33, #fecfef33)',
-]
-
-const sourceSolidColors = [
-  '#eef2ff', '#fdf2f8', '#eff6ff', '#ecfdf5',
-  '#fff7ed', '#faf5ff', '#fefce8', '#fef2f2'
-]
-
-function getSourceColor(idx: number) {
-  return sourceSolidColors[idx % sourceSolidColors.length]
-}
-
-const groupedSources = computed<SourceGroup[]>(() => {
-  const map = new Map<string, NewsItem[]>()
-  for (const item of newsList.value) {
-    const key = item.source || '未知来源'
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(item)
-  }
-  const groups: SourceGroup[] = []
-  for (const [name, items] of map) {
-    const icon = items[0]?.icon || ''
-    const ts = items[0]?.timestamp || ''
-    groups.push({ name, icon, updateTime: ts ? formatTime(ts) : '刚刚更新', items })
-  }
-  return groups
+const displayList = computed(() => {
+  return newsList.value
 })
 
-function formatTime(ts: string): string {
-  if (!ts) return '刚刚更新'
+async function fetchSources() {
   try {
-    const d = new Date(ts)
-    if (isNaN(d.getTime())) return ts
-    const now = Date.now()
-    const diff = now - d.getTime()
-    if (diff < 60000) return '刚刚更新'
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前更新`
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前更新`
-    return `${d.getMonth() + 1}/${d.getDate()} 更新`
-  } catch {
-    return ts
+    const res: any = await getNewsSources()
+    if (res && res.code === 200 && res.data) {
+      sourceTabs.value = res.data.map((s: any) => ({
+        key: s.key,
+        name: s.name,
+        color: s.color || '#999',
+        bgColor: s.bgColor || '#f0f0f0',
+        label: s.label || '',
+        count: 0,
+      }))
+      if (sourceTabs.value.length > 0 && !currentSource.value) {
+        currentSource.value = ''
+      }
+    }
+  } catch (e) {
+    console.error('获取新闻源失败:', e)
   }
 }
 
-async function fetchNews(category: string = currentTab.value) {
+async function fetchNews(sources: string = '') {
   loading.value = true
   try {
-    const res: any = await getNewsList(category)
+    const params: any = { category: 'hottest' }
+    if (sources) params.sources = sources
+    const res: any = await getNewsList(params)
     if (res && res.code === 200) {
       newsList.value = res.data || []
+      // 更新源的 count
+      if (res.sources) {
+        for (const s of res.sources) {
+          const tab = sourceTabs.value.find(t => t.key === s.key)
+          if (tab) tab.count = s.count
+        }
+      }
     } else {
       uni.showToast({ title: res?.message || '加载失败', icon: 'none' })
     }
@@ -203,25 +180,31 @@ async function fetchNews(category: string = currentTab.value) {
   }
 }
 
-function switchTab(key: string) {
-  if (currentTab.value === key) return
-  currentTab.value = key
-  newsList.value = []
-  fetchNews(key)
+function switchSource(key: string) {
+  if (currentSource.value === key) {
+    // 取消选择，显示全部
+    currentSource.value = ''
+    fetchNews()
+  } else {
+    currentSource.value = key
+    newsList.value = []
+    fetchNews(key)
+  }
 }
 
 async function onRefresh() {
   isRefreshing.value = true
-  await fetchNews()
+  await fetchNews(currentSource.value || undefined)
 }
 
 function refreshAll() {
+  currentSource.value = ''
   newsList.value = []
   fetchNews()
 }
 
 function openNews(item: NewsItem) {
-  const url = item.mobileUrl || item.url
+  const url = item.url
   if (url) {
     uni.navigateTo({
       url: `/pages/news/webview?url=${encodeURIComponent(url)}&title=${encodeURIComponent(item.title)}`
@@ -233,11 +216,20 @@ function goBack() {
   uni.navigateBack()
 }
 
+function onImageError(idx: number) {
+  // 图片加载失败时隐藏
+  if (newsList.value[idx]) {
+    newsList.value[idx].image = ''
+  }
+}
+
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   const navHeight = statusBarHeight.value + 44
-  scrollHeight.value = sysInfo.windowHeight - navHeight - 50
+  const sourceBarHeight = 52
+  scrollHeight.value = sysInfo.windowHeight - navHeight - sourceBarHeight
+  fetchSources()
   fetchNews()
 })
 </script>
@@ -249,7 +241,7 @@ onMounted(() => {
 }
 
 .nav-bar {
-  background: linear-gradient(135deg, #ff6b35, #ff8c42);
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -281,6 +273,7 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 700;
   color: #fff;
+  letter-spacing: 1px;
 }
 
 .refresh-icon {
@@ -288,46 +281,55 @@ onMounted(() => {
   color: #fff;
 }
 
-.tab-bar {
-  display: flex;
+/* 新闻源切换栏 */
+.source-bar {
   background: #fff;
-  padding: 10px 16px;
-  gap: 12px;
+  padding: 10px 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  position: sticky;
+  top: calc(var(--status-bar-height, 20px) + 44px);
+  z-index: 99;
 }
 
-.tab-item {
-  display: flex;
+.source-bar-scroll {
+  white-space: nowrap;
+  padding: 0 12px;
+}
+
+.source-tab {
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 20px;
+  padding: 6px 16px;
+  margin-right: 10px;
   border-radius: 20px;
   background: #f0f0f0;
+  color: #666;
+  font-size: 13px;
+  font-weight: 500;
   transition: all 0.3s;
 }
 
-.tab-item.active {
-  background: linear-gradient(135deg, #ff6b35, #ff8c42);
-  box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+.source-tab.active {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
-.tab-icon {
-  font-size: 16px;
+.source-tab-name {
+  font-size: 13px;
 }
 
-.tab-label {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+.source-tab-count {
+  font-size: 10px;
+  background: rgba(255,255,255,0.3);
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
 }
 
-.tab-item.active .tab-label {
-  color: #fff;
-  font-weight: 700;
-}
-
-.source-scroll {
-  padding: 16px 12px;
+/* 新闻滚动区域 */
+.news-scroll {
+  padding: 12px;
 }
 
 .loading-wrap {
@@ -341,7 +343,7 @@ onMounted(() => {
   width: 40px;
   height: 40px;
   border: 3px solid #f0f0f0;
-  border-top-color: #ff6b35;
+  border-top-color: #1a1a2e;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -376,7 +378,7 @@ onMounted(() => {
 .empty-btn {
   margin-top: 20px;
   padding: 10px 30px;
-  background: linear-gradient(135deg, #ff6b35, #ff8c42);
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
   border-radius: 20px;
 }
 
@@ -385,129 +387,89 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.news-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.source-card {
-  border-radius: 16px;
-  padding: 14px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  min-height: 200px;
-  max-height: 420px;
-  display: flex;
-  flex-direction: column;
-}
-
-.source-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.source-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.source-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-}
-
-.source-icon-placeholder {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b35, #ff8c42);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.source-icon-text {
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.source-meta {
-  display: flex;
-  flex-direction: column;
-}
-
-.source-name-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.source-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #333;
-}
-
-.source-time {
-  font-size: 11px;
-  color: #999;
-  margin-top: 2px;
-}
-
+/* 新闻卡片列表 */
 .news-list {
-  flex: 1;
-  background: rgba(255,255,255,0.7);
-  border-radius: 12px;
-  padding: 8px;
-  overflow: hidden;
-}
-
-.news-item {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 8px;
-  border-radius: 8px;
-  transition: background 0.2s;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.news-item:active {
-  background: rgba(0,0,0,0.04);
+.news-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transition: transform 0.2s;
 }
 
-.news-rank {
-  min-width: 24px;
-  height: 24px;
+.news-card:active {
+  transform: scale(0.98);
+}
+
+.card-source {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.06);
-  border-radius: 6px;
-  flex-shrink: 0;
+  justify-content: space-between;
+  padding: 8px 14px;
 }
 
-.rank-num {
+.card-source-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.source-label {
   font-size: 12px;
-  color: #666;
   font-weight: 600;
 }
 
-.news-content {
+.source-type {
+  font-size: 10px;
+  color: #999;
+  background: rgba(0,0,0,0.05);
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.card-rank {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ccc;
+  min-width: 24px;
+  text-align: center;
+}
+
+.card-rank.rank-hot {
+  color: #ff4757;
+  font-size: 16px;
+}
+
+.card-body {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 14px;
+  gap: 12px;
+}
+
+.card-text {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
-.news-title {
-  font-size: 14px;
-  color: #333;
+.card-title {
+  font-size: 15px;
+  color: #1a1a2e;
+  font-weight: 600;
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -515,11 +477,33 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.news-engagement {
-  font-size: 11px;
+.card-desc {
+  font-size: 12px;
   color: #999;
-  white-space: nowrap;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.card-hot {
+  font-size: 11px;
+  color: #ff6b35;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hot-icon {
+  font-size: 11px;
+}
+
+.card-image {
+  width: 80px;
+  height: 60px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: #f0f0f0;
 }
 </style>
