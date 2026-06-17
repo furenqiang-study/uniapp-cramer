@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from database import engine, Base
 from routers import auth, menu, home, profile, log, laptop
-from routers import game, music, video, novel, ent_common
+from routers import game, music, video, novel, ent_common, news
 
 # 创建数据库表
 Base.metadata.create_all(bind=engine)
@@ -120,6 +120,7 @@ app.include_router(music.router)
 app.include_router(video.router)
 app.include_router(novel.router)
 app.include_router(ent_common.router)
+app.include_router(news.router)
 
 
 @app.get("/", tags=["健康检查"])

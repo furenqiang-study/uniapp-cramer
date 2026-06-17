@@ -79,6 +79,8 @@ const validMoves = ref<[number, number][]>([])
 const gameOver = ref(false)
 const winMsg = ref('')
 const undoStack = ref<{ board: Board; turn: string }[]>([])
+let searchDeadline = 0
+let searchStopped = false
 
 // 难度系统
 const difficulties = [
@@ -336,7 +338,9 @@ function evaluate(b: Board): number {
 
 // ==================== Minimax + Alpha-Beta 搜索 ====================
 function alphaBeta(b: Board, depth: number, alpha: number, beta: number, isMax: boolean): number {
+  if(searchStopped) return evaluate(b)
   if(depth <= 0) return evaluate(b)
+  if(Date.now() >= searchDeadline) { searchStopped = true; return evaluate(b) }
   const side = isMax?'black':'red'
   const moves = genMoves(side, b)
   if(moves.length===0) return isMax?-99999:99999
@@ -380,29 +384,57 @@ function alphaBeta(b: Board, depth: number, alpha: number, beta: number, isMax: 
 // ==================== AI主函数 ====================
 function aiMove() {
   if(gameOver.value) return
-  const depth = difficulty.value // 1-4层搜索
+  const maxDepth = difficulty.value
+  const timeLimit = [0, 500, 1000, 2000, 3500][difficulty.value] || 1000
   const b = board.value
   const moves = genMoves('black', b)
   if(!moves.length) { gameOver.value=true; winMsg.value='🎉 红方获胜！'; return }
 
-  // 简单难度加随机性
   const randomRange = [0, 0, 5, 15, 40][difficulty.value] || 0
+
+  // 迭代加深搜索 + 时间限制
+  searchDeadline = Date.now() + timeLimit
   let bestScore = -Infinity
   let bestMoves: typeof moves = []
+  const moveOrderScores = new Map<string, number>()
 
-  for(const mv of moves) {
-    const captured = b[mv.er][mv.ec]
-    b[mv.er][mv.ec] = b[mv.sr][mv.sc]
-    b[mv.sr][mv.sc] = null
-    let score = alphaBeta(b, depth-1, -Infinity, Infinity, false)
-    // 简单难度加随机扰动
-    if(randomRange > 0) score += (Math.random()-0.5)*randomRange*2
-    b[mv.sr][mv.sc] = b[mv.er][mv.ec]
-    b[mv.er][mv.ec] = captured
+  for(let d = 1; d <= maxDepth; d++) {
+    searchStopped = false
+    // 按上一轮评分排序走法（优化剪枝）
+    const sorted = d > 1 ? [...moves].sort((a, bm) => {
+      const sa = moveOrderScores.get(`${a.sr},${a.sc},${a.er},${a.ec}`) || 0
+      const sb = moveOrderScores.get(`${bm.sr},${bm.sc},${bm.er},${bm.ec}`) || 0
+      return sb - sa
+    }) : moves
 
-    if(score > bestScore) { bestScore = score; bestMoves = [mv] }
-    else if(score === bestScore) bestMoves.push(mv)
+    let iterBest: typeof moves = []
+    let iterBestScore = -Infinity
+    const newScores = new Map<string, number>()
+
+    for(const mv of sorted) {
+      if(searchStopped) break
+      const captured = b[mv.er][mv.ec]
+      b[mv.er][mv.ec] = b[mv.sr][mv.sc]
+      b[mv.sr][mv.sc] = null
+      let score = alphaBeta(b, d-1, -Infinity, Infinity, false)
+      if(randomRange > 0) score += (Math.random()-0.5)*randomRange*2
+      b[mv.sr][mv.sc] = b[mv.er][mv.ec]
+      b[mv.er][mv.ec] = captured
+
+      newScores.set(`${mv.sr},${mv.sc},${mv.er},${mv.ec}`, score)
+      if(score > iterBestScore) { iterBestScore = score; iterBest = [mv] }
+      else if(score === iterBestScore) iterBest.push(mv)
+    }
+
+    if(!searchStopped && iterBest.length > 0) {
+      bestScore = iterBestScore
+      bestMoves = [...iterBest]
+      for(const [k, v] of newScores) moveOrderScores.set(k, v)
+    }
+    if(searchStopped) break
   }
+
+  if(bestMoves.length === 0) bestMoves = moves
   const mv = bestMoves[Math.floor(Math.random()*bestMoves.length)]
   doMoveDirect(mv.sr, mv.sc, mv.er, mv.ec)
 }

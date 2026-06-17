@@ -85,7 +85,7 @@ const quickActions = ref([
   { icon: '📋', label: '菜单管理', bgColor: '#fff3e0', action: 'menu' },
   { icon: '👤', label: '用户管理', bgColor: '#e8f5e9', action: 'user' },
   { icon: '💻', label: '电脑推荐', bgColor: '#e3f2fd', action: 'laptop' },
-  { icon: '⚙️', label: '系统设置', bgColor: '#fce4ec', action: 'settings' },
+  { icon: '📰', label: '新闻现在', bgColor: '#fce4ec', action: 'news-now' },
   { icon: '🌍', label: '漫游地球', bgColor: '#e8eaf6', action: 'roam-earth' },
   { icon: '🎮', label: '娱乐中心', bgColor: '#e0f2f1', action: 'entertainment' },
   { icon: '📷', label: '相机拍照', bgColor: '#fff8e1', action: 'camera' },
@@ -154,6 +154,8 @@ function handleQuickAction(item: any) {
     uni.navigateTo({ url: '/pages/entertainment/index' })
   } else if (item.action === 'roam-earth') {
     uni.navigateTo({ url: '/pages/earth/roam-earth' })
+  } else if (item.action === 'news-now') {
+    uni.navigateTo({ url: '/pages/news/news-now' })
   } else {
     uni.showToast({ title: `${item.label} 功能开发中`, icon: 'none' })
   }

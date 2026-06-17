@@ -198,6 +198,20 @@
         "navigationStyle": "custom",
         "navigationBarTitleText": "漫游地球"
       }
+    },
+    {
+      "path": "pages/news/news-now",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "新闻现在"
+      }
+    },
+    {
+      "path": "pages/news/webview",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "新闻详情"
+      }
     }
   ],
   "globalStyle": {
