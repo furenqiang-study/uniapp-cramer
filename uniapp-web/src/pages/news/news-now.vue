@@ -205,11 +205,25 @@ function refreshAll() {
 
 function openNews(item: NewsItem) {
   const url = item.url
-  if (url) {
-    uni.navigateTo({
-      url: `/pages/news/webview?url=${encodeURIComponent(url)}&title=${encodeURIComponent(item.title)}`
-    })
-  }
+  if (!url) return
+
+  // #ifdef APP-PLUS
+  // @ts-ignore
+  plus.runtime.openURL(url)
+  // #endif
+
+  // #ifdef H5
+  window.open(url, '_blank')
+  // #endif
+
+  // #ifdef MP
+  uni.setClipboardData({
+    data: url,
+    success: () => {
+      uni.showToast({ title: '链接已复制到剪贴板', icon: 'none' })
+    }
+  })
+  // #endif
 }
 
 function goBack() {
