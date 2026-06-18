@@ -326,6 +326,66 @@ def my_novels(
     return ApiResponse(code=200, message="success", data=result)
 
 
+# ==================== 爬虫接口（实时爬取 piquge.com） ====================
+
+@router.get("/crawl/search", response_model=ApiResponse)
+async def crawl_search(
+    keyword: str = Query(..., min_length=1),
+    page: int = Query(1, ge=1),
+):
+    """在线搜索小说（实时爬取）"""
+    from services.novel_crawler import search_novels
+    result = await search_novels(keyword, page)
+    return ApiResponse(code=200, message="success", data=result)
+
+
+@router.get("/crawl/info", response_model=ApiResponse)
+async def crawl_novel_info(
+    url: str = Query(..., description="小说详情页URL"),
+    load_chapters: bool = Query(False, description="是否加载完整章节目录"),
+):
+    """获取小说详情+章节列表（实时爬取）"""
+    from services.novel_crawler import get_novel_info, get_chapter_list
+    result = await get_novel_info(url)
+    if "error" in result:
+        return ApiResponse(code=500, message=result["error"])
+    
+    # 如果请求加载完整章节目录
+    if load_chapters and result.get("chapters_url"):
+        chapters = await get_chapter_list(result["chapters_url"])
+        result["chapters"] = chapters
+    else:
+        result["chapters"] = result.get("preview_chapters", [])
+    
+    return ApiResponse(code=200, message="success", data=result)
+
+
+@router.get("/crawl/chapters", response_model=ApiResponse)
+async def crawl_chapter_list(
+    url: str = Query(..., description="章节目录页URL（如 /96/96347/1/）"),
+):
+    """获取完整章节目录（实时爬取）"""
+    from services.novel_crawler import get_chapter_list
+    if not url.startswith("http"):
+        url = f"https://m.piquge.com{url}"
+    chapters = await get_chapter_list(url)
+    return ApiResponse(code=200, message="success", data=chapters)
+
+
+@router.get("/crawl/chapter", response_model=ApiResponse)
+async def crawl_chapter_content(
+    url: str = Query(..., description="章节页URL"),
+):
+    """获取章节正文内容（实时爬取）"""
+    from services.novel_crawler import get_chapter_content
+    result = await get_chapter_content(url)
+    if "error" in result:
+        return ApiResponse(code=500, message=result["error"])
+    return ApiResponse(code=200, message="success", data=result)
+
+
+# ==================== 辅助函数 ====================
+
 def _novel_to_item(n: EntNovel) -> NovelListItem:
     return NovelListItem(
         id=n.id, title=n.title,

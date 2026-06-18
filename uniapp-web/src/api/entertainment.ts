@@ -161,3 +161,19 @@ export const getNovelRank = (rank_type = 'hot', limit = 20) =>
 
 /** 我的书架 */
 export const getMyNovels = (type = 'shelf') => get(`/api/ent/novel/my?type=${type}`)
+
+/** 在线搜索小说（实时爬取 piquge.com） */
+export const crawlSearchNovels = (keyword: string, page = 1) =>
+  get(`/api/ent/novel/crawl/search?keyword=${encodeURIComponent(keyword)}&page=${page}`)
+
+/** 获取小说详情+章节列表（实时爬取） */
+export const crawlNovelInfo = (url: string, loadChapters = false) =>
+  get(`/api/ent/novel/crawl/info?url=${encodeURIComponent(url)}&load_chapters=${loadChapters}`)
+
+/** 获取完整章节目录（实时爬取） */
+export const crawlChapterList = (url: string) =>
+  get(`/api/ent/novel/crawl/chapters?url=${encodeURIComponent(url)}`)
+
+/** 获取章节正文内容（实时爬取） */
+export const crawlChapterContent = (url: string) =>
+  get(`/api/ent/novel/crawl/chapter?url=${encodeURIComponent(url)}`)
