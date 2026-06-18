@@ -219,6 +219,13 @@
         "navigationStyle": "custom",
         "navigationBarTitleText": "新闻详情"
       }
+    },
+    {
+      "path": "pages/weather/weather",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "天气预报"
+      }
     }
   ],
   "globalStyle": {

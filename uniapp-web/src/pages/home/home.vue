@@ -89,7 +89,7 @@ const quickActions = ref([
   { icon: '🌍', label: '漫游地球', bgColor: '#e8eaf6', action: 'roam-earth' },
   { icon: '🎮', label: '娱乐中心', bgColor: '#e0f2f1', action: 'entertainment' },
   { icon: '📷', label: '相机拍照', bgColor: '#fff8e1', action: 'camera' },
-  { icon: '❓', label: '帮助中心', bgColor: '#e8eaf6', action: 'help' }
+  { icon: '🌤️', label: '天气预报', bgColor: '#e3f2fd', action: 'weather' }
 ])
 
 const recentList = ref([
@@ -158,6 +158,8 @@ function handleQuickAction(item: any) {
     uni.navigateTo({ url: '/pages/user/user' })
   } else if (item.action === 'news-now') {
     uni.navigateTo({ url: '/pages/news/news-now' })
+  } else if (item.action === 'weather') {
+    uni.navigateTo({ url: '/pages/weather/weather' })
   } else {
     uni.showToast({ title: `${item.label} 功能开发中`, icon: 'none' })
   }
