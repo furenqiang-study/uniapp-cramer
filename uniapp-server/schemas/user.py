@@ -39,6 +39,24 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
 
 
+class UserCreate(BaseModel):
+    """管理员创建用户"""
+    username: str
+    password: str
+    nickname: Optional[str] = ""
+    phone: Optional[str] = ""
+    role: Optional[str] = "user"
+
+
+class UserUpdateAdmin(BaseModel):
+    """管理员编辑用户"""
+    nickname: Optional[str] = None
+    avatar: Optional[str] = None
+    phone: Optional[str] = None
+    role: Optional[str] = None
+    password: Optional[str] = None
+
+
 class Token(BaseModel):
     """Token响应"""
     access_token: str

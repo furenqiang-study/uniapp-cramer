@@ -154,6 +154,8 @@ function handleQuickAction(item: any) {
     uni.navigateTo({ url: '/pages/entertainment/index' })
   } else if (item.action === 'roam-earth') {
     uni.navigateTo({ url: '/pages/earth/roam-earth' })
+  } else if (item.action === 'user') {
+    uni.navigateTo({ url: '/pages/user/user' })
   } else if (item.action === 'news-now') {
     uni.navigateTo({ url: '/pages/news/news-now' })
   } else {

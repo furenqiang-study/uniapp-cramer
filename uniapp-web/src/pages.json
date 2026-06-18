@@ -29,6 +29,13 @@
       }
     },
     {
+      "path": "pages/user/user",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "用户管理"
+      }
+    },
+    {
       "path": "pages/camera/camera",
       "style": {
         "navigationStyle": "custom",
