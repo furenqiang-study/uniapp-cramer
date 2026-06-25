@@ -218,13 +218,13 @@ function parseTencentWeatherData(data: any, city: string): WeatherData | null {
         const maxDeg = parseInt(day.max_degree)
         const minDeg = parseInt(day.min_degree)
         // 构建每日 AQI
-      const dayAqi: ForecastDayAqi = {
-        aqi: day.aqi ?? 0,
-        aqiLevel: day.aqi_level ?? 0,
-        aqiName: day.aqi_name || '',
-        aqiUrl: day.aqi_url || '',
-      }
-      forecast.push({
+        const dayAqi: ForecastDayAqi = {
+          aqi: day.aqi ?? 0,
+          aqiLevel: day.aqi_level ?? 0,
+          aqiName: day.aqi_name || '',
+          aqiUrl: day.aqi_url || '',
+        }
+        forecast.push({
           date: day.time || '',
           maxTempC: String(day.max_degree ?? '--'),
           minTempC: String(day.min_degree ?? '--'),
@@ -330,7 +330,7 @@ function parseTencentWeatherData(data: any, city: string): WeatherData | null {
 async function fetchFromTencentWeather(city: string): Promise<WeatherData | null> {
   try {
     const province = CITY_PROVINCE_MAP[city] || city
-    const res = await get<Record<string, any>>('/weather/tencent-raw', {
+    const res = await get<Record<string, any>>('/api/weather/tencent-raw', {
       province,
       city,
       weather_type: 'observe|forecast_1h|forecast_24h|index|alarm|limit|tips|rise',
@@ -356,7 +356,7 @@ export async function getWeather(city: string = '北京'): Promise<{ code: numbe
 
   // 2. 腾讯天气失败，尝试走后端
   try {
-    const res = await get<WeatherData>('/weather', { city })
+    const res = await get<WeatherData>('/api/weather', { city })
     return res
   } catch {
     // 3. 都失败，返回备用数据
@@ -369,7 +369,7 @@ export async function getWeather(city: string = '北京'): Promise<{ code: numbe
  */
 export async function getCities(): Promise<{ code: number; data: CityInfo[] }> {
   try {
-    const res = await get<CityInfo[]>('/weather/cities')
+    const res = await get<CityInfo[]>('/api/weather/cities')
     return res
   } catch {
     // 后端不可用时返回本地静态城市列表
