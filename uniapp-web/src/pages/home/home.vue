@@ -82,7 +82,7 @@ const statsData = ref([
 ])
 
 const quickActions = ref([
-  { icon: '📋', label: '菜单管理', bgColor: '#fff3e0', action: 'menu' },
+  { icon: '🥇', label: '黄金预测', bgColor: '#fff8e1', action: 'gold' },
   { icon: '👤', label: '用户管理', bgColor: '#e8f5e9', action: 'user' },
   { icon: '💻', label: '电脑推荐', bgColor: '#e3f2fd', action: 'laptop' },
   { icon: '📰', label: '新闻现在', bgColor: '#fce4ec', action: 'news-now' },
@@ -144,8 +144,8 @@ function goToProfile() {
 }
 
 function handleQuickAction(item: any) {
-  if (item.action === 'menu') {
-    uni.navigateTo({ url: '/pages/menu/menu' })
+  if (item.action === 'gold') {
+    uni.navigateTo({ url: '/pages/gold/gold' })
   } else if (item.action === 'camera') {
     uni.navigateTo({ url: '/pages/camera/camera' })
   } else if (item.action === 'laptop') {

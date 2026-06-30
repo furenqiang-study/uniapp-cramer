@@ -9,8 +9,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from database import engine, Base
-from routers import auth, menu, home, profile, log, laptop, user
-from routers import game, music, video, novel, ent_common, news, weather
+from routers import auth, home, profile, log, laptop, user
+from routers import game, music, video, novel, ent_common, news, weather, gold
 
 # 创建数据库表
 Base.metadata.create_all(bind=engine)
@@ -110,7 +110,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(auth.router)
-app.include_router(menu.router)
+# app.include_router(menu.router)  # 已停用：菜单管理模块，由黄金预测模块替代
 app.include_router(home.router)
 app.include_router(profile.router)
 app.include_router(log.router)
@@ -123,6 +123,7 @@ app.include_router(ent_common.router)
 app.include_router(news.router)
 app.include_router(user.router)
 app.include_router(weather.router)
+app.include_router(gold.router)
 
 
 @app.get("/", tags=["健康检查"])

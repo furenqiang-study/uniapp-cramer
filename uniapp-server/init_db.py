@@ -10,6 +10,7 @@ from models.user import User
 from models.menu import Menu
 from models.log import OperationLog
 from models.laptop import LaptopModel, LaptopRecommendation
+from models.gold import GoldPrice, GoldPrediction
 from services.auth import hash_password
 
 

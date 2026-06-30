@@ -2,3 +2,4 @@
 from schemas.user import *
 from schemas.menu import *
 from schemas.log import *
+from schemas.gold import *

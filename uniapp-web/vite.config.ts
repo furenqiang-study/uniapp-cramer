@@ -17,7 +17,7 @@ export default defineConfig({
       '/uniapp-api': {
         target: 'http://localhost:8022',
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/uniapp-api/, '/api')
+        rewrite: (path: string) => path.replace(/^\/uniapp-api/, '')
       },
       // 腾讯天气 API 代理
       '/tencent-weather': {

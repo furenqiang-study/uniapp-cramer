@@ -226,6 +226,13 @@
         "navigationStyle": "custom",
         "navigationBarTitleText": "天气预报"
       }
+    },
+    {
+      "path": "pages/gold/gold",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "黄金预测"
+      }
     }
   ],
   "globalStyle": {
