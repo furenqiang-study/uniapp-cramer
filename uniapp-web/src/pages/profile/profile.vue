@@ -1,325 +1,169 @@
 <template>
-  <view class="profile-container">
-    <!-- 顶部个人信息 -->
-    <view class="profile-header">
-      <view class="profile-bg"></view>
-      <view class="profile-info">
-        <view class="avatar-large">
-          <text class="avatar-char">{{ userInfo.nickname.charAt(0) }}</text>
-        </view>
-        <text class="profile-name">{{ userInfo.nickname }}</text>
-        <text class="profile-role">{{ userInfo.role }}</text>
-        <view class="profile-stats">
-          <view class="profile-stat-item">
-            <text class="profile-stat-value">128</text>
-            <text class="profile-stat-label">菜单数</text>
-          </view>
-          <view class="profile-stat-divider"></view>
-          <view class="profile-stat-item">
-            <text class="profile-stat-value">56</text>
-            <text class="profile-stat-label">用户数</text>
-          </view>
-          <view class="profile-stat-divider"></view>
-          <view class="profile-stat-item">
-            <text class="profile-stat-value">99%</text>
-            <text class="profile-stat-label">可用率</text>
-          </view>
-        </view>
+  <view class="page">
+    <view class="hero card">
+      <view class="avatar">{{ user?.nickname?.slice(0, 1) || 'U' }}</view>
+      <view>
+        <text class="name">{{ user?.nickname || '未登录' }}</text>
+        <text class="role">CoolCap 用户</text>
       </view>
     </view>
 
-    <!-- 功能列表 -->
-    <view class="menu-section">
-      <view class="menu-group">
-        <view class="menu-item" v-for="item in menuList1" :key="item.label" @tap="handleMenuTap(item)">
-          <view class="menu-item-left">
-            <text class="menu-icon">{{ item.icon }}</text>
-            <text class="menu-label">{{ item.label }}</text>
-          </view>
-          <view class="menu-item-right">
-            <text class="menu-arrow">›</text>
-          </view>
-        </view>
+    <view class="card">
+      <text class="sec-t">模拟环境</text>
+      <view class="row">
+        <text class="k">环境温度 {{ env.temp }}°C</text>
+        <slider :value="env.temp" :min="18" :max="32" :step="1" activeColor="#0EA5E9" @change="(e:any)=>onTemp(e.detail.value)" />
       </view>
-
-      <view class="menu-group">
-        <view class="menu-item" v-for="item in menuList2" :key="item.label" @tap="handleMenuTap(item)">
-          <view class="menu-item-left">
-            <text class="menu-icon">{{ item.icon }}</text>
-            <text class="menu-label">{{ item.label }}</text>
-          </view>
-          <view class="menu-item-right">
-            <text v-if="item.extra" class="menu-extra">{{ item.extra }}</text>
-            <text class="menu-arrow">›</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="menu-group">
-        <view class="menu-item" @tap="handleMenuTap({ action: 'about' })">
-          <view class="menu-item-left">
-            <text class="menu-icon">ℹ️</text>
-            <text class="menu-label">关于我们</text>
-          </view>
-          <view class="menu-item-right">
-            <text class="menu-extra">v1.0.0</text>
-            <text class="menu-arrow">›</text>
-          </view>
-        </view>
+      <view class="row">
+        <text class="k">湿度 {{ env.humidity }}%</text>
+        <slider :value="env.humidity" :min="20" :max="95" :step="1" activeColor="#0EA5E9" @change="(e:any)=>onHum(e.detail.value)" />
       </view>
     </view>
 
-    <!-- 退出登录 -->
-    <view class="logout-section">
-      <button class="logout-btn" @tap="handleLogout">退出登录</button>
+    <view class="card">
+      <text class="sec-t">安全包络（只读默认）</text>
+      <view class="kv" v-for="(v, k) in safety" :key="k">
+        <text class="k">{{ safetyLabel[k] }}</text>
+        <text class="v">{{ v }}{{ unitOf(k) }}</text>
+      </view>
     </view>
+
+    <view class="card">
+      <text class="sec-t">数据同步</text>
+      <text class="tip">后端表前缀 YL_，接口 /api/coolcap/*。未启动服务时使用本地模拟。</text>
+      <button class="btn ghost" @tap="goAlarm">报警中心</button>
+    </view>
+
+    <button class="btn danger" @tap="onLogout">退出登录</button>
   </view>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
+import { reactive, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { getUser, logout, getEnvSettings, setEnvSettings } from '@/services/store/therapyStore'
+import { useTherapy } from '@/services/store/useTherapy'
+import { getSafety } from '@/api/coolcap'
+import { clearToken } from '@/api/request'
 
-const userInfo = reactive({
-  nickname: '管理员',
-  role: '超级管理员',
-  username: 'admin'
+const user = ref(getUser())
+const env = reactive(getEnvSettings())
+const { setEnv } = useTherapy()
+
+const safety = ref<Record<string, number>>({
+  scalp_lower_limit: 12,
+  scalp_hard_stop: 10,
+  hot_side_warn: 60,
+  hot_side_stop: 65,
+  current_max: 2,
+  dew_point_margin: 2,
+  delta_target: 1.5
 })
 
-const menuList1 = [
-  { icon: '👤', label: '个人信息', action: 'profile' },
-  { icon: '🔐', label: '修改密码', action: 'password' },
-  { icon: '🌍', label: '漫游地球', action: 'roam-earth' }
-]
+const safetyLabel: Record<string, string> = {
+  scalp_lower_limit: '头皮温度下限',
+  scalp_hard_stop: '紧急停机温度',
+  hot_side_warn: '热端过温警告',
+  hot_side_stop: '热端过温停机',
+  current_max: 'TEC 最大电流',
+  dew_point_margin: '露点安全余量',
+  delta_target: '全头温差目标'
+}
 
-const menuList2 = [
-  { icon: '🎨', label: '主题设置', action: 'theme' },
-  { icon: '🌐', label: '语言设置', action: 'language', extra: '简体中文' },
-  { icon: '🗑️', label: '清除缓存', action: 'cache', extra: '12.5MB' },
-  { icon: '💬', label: '意见反馈', action: 'feedback' }
-]
+function unitOf(k: string) {
+  if (k === 'current_max') return 'A'
+  if (k === 'dew_point_margin' || k === 'delta_target' || k.startsWith('scalp') || k.startsWith('hot')) return '°C'
+  return ''
+}
 
-onMounted(() => {
-  const storedInfo = uni.getStorageSync('userInfo')
-  if (storedInfo) {
-    try {
-      const info = JSON.parse(storedInfo)
-      userInfo.nickname = info.nickname || '管理员'
-      userInfo.username = info.username || 'admin'
-    } catch (e) {}
-  }
+function onTemp(v: number) {
+  env.temp = v
+  setEnv(env.temp, env.humidity)
+  setEnvSettings(env.temp, env.humidity)
+}
+
+function onHum(v: number) {
+  env.humidity = v
+  setEnv(env.temp, env.humidity)
+  setEnvSettings(env.temp, env.humidity)
+}
+
+function goAlarm() {
+  uni.navigateTo({ url: '/pages/alarm/alarm' })
+}
+
+function onLogout() {
+  logout()
+  clearToken()
+  uni.reLaunch({ url: '/pages/login/login' })
+}
+
+onShow(async () => {
+  user.value = getUser()
+  try {
+    const res = await getSafety()
+    if (res.code === 200 && res.data) safety.value = res.data
+  } catch (e) {}
 })
-
-function handleMenuTap(item: any) {
-  if (item.action === 'cache') {
-    uni.showModal({
-      title: '提示',
-      content: '确定清除缓存吗？',
-      success: (res) => {
-        if (res.confirm) {
-          uni.showToast({ title: '缓存已清除', icon: 'success' })
-        }
-      }
-    })
-  } else if (item.action === 'roam-earth') {
-    uni.navigateTo({ url: '/pages/earth/roam-earth' })
-  } else {
-    uni.showToast({ title: `${item.label} 功能开发中`, icon: 'none' })
-  }
-}
-
-function handleLogout() {
-  uni.showModal({
-    title: '提示',
-    content: '确定退出登录吗？',
-    success: (res) => {
-      if (res.confirm) {
-        uni.removeStorageSync('token')
-        uni.removeStorageSync('userInfo')
-        uni.reLaunch({ url: '/pages/login/login' })
-      }
-    }
-  })
-}
 </script>
 
 <style lang="scss" scoped>
-.profile-container {
+.page {
   min-height: 100vh;
-  background: #f5f6fa;
+  padding: 24rpx 28rpx 48rpx;
+  background: #f4f7fb;
 }
-
-// ========== 顶部个人信息 ==========
-.profile-header {
-  position: relative;
-  padding-bottom: 40rpx;
-}
-
-.profile-bg {
-  height: 300rpx;
-  background: linear-gradient(135deg, #ff6b35, #f7931e);
-  border-radius: 0 0 50rpx 50rpx;
-}
-
-.profile-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: -120rpx;
-  position: relative;
-  z-index: 1;
-}
-
-.avatar-large {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ff8a50, #ff6b35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 6rpx solid #fff;
-  box-shadow: 0 8rpx 30rpx rgba(255, 107, 53, 0.3);
-  margin-bottom: 20rpx;
-}
-
-.avatar-char {
-  font-size: 64rpx;
-  font-weight: 700;
-  color: #fff;
-}
-
-.profile-name {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 8rpx;
-}
-
-.profile-role {
-  font-size: 24rpx;
-  color: #999;
-  margin-bottom: 30rpx;
-}
-
-.profile-stats {
-  display: flex;
-  align-items: center;
+.card {
   background: #fff;
-  border-radius: 20rpx;
-  padding: 24rpx 40rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-  width: 80%;
-}
-
-.profile-stat-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.profile-stat-value {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #ff6b35;
-  margin-bottom: 4rpx;
-}
-
-.profile-stat-label {
-  font-size: 22rpx;
-  color: #999;
-}
-
-.profile-stat-divider {
-  width: 1rpx;
-  height: 50rpx;
-  background: #eee;
-}
-
-// ========== 功能列表 ==========
-.menu-section {
-  padding: 20rpx 30rpx;
-}
-
-.menu-group {
-  background: #fff;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
+  padding: 24rpx;
   margin-bottom: 20rpx;
-  overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04);
 }
-
-.menu-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 30rpx;
-  border-bottom: 1rpx solid #f5f5f5;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:active {
-    background: #fafafa;
-  }
-}
-
-.menu-item-left {
+.hero {
   display: flex;
   align-items: center;
   gap: 20rpx;
 }
-
-.menu-icon {
-  font-size: 36rpx;
-}
-
-.menu-label {
-  font-size: 30rpx;
-  color: #333;
-}
-
-.menu-item-right {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.menu-extra {
-  font-size: 24rpx;
-  color: #bbb;
-}
-
-.menu-arrow {
-  font-size: 32rpx;
-  color: #ccc;
-}
-
-// ========== 退出登录 ==========
-.logout-section {
-  padding: 20rpx 30rpx 80rpx;
-}
-
-.logout-btn {
-  width: 100%;
+.avatar {
+  width: 96rpx;
   height: 96rpx;
   line-height: 96rpx;
   text-align: center;
-  background: #fff;
-  color: #ff4757;
-  font-size: 32rpx;
-  font-weight: 600;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+.name { display: block; font-size: 32rpx; font-weight: 700; color: #0f172a; }
+.role { font-size: 22rpx; color: #64748b; }
+.sec-t { display: block; font-size: 28rpx; font-weight: 600; color: #0f172a; margin-bottom: 16rpx; }
+.row { margin-bottom: 8rpx; }
+.k { font-size: 24rpx; color: #64748b; }
+.v { font-size: 24rpx; color: #0f172a; font-variant-numeric: tabular-nums; }
+.kv {
+  display: flex;
+  justify-content: space-between;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #f1f5f9;
+}
+.tip {
+  display: block;
+  font-size: 22rpx;
+  color: #64748b;
+  margin-bottom: 16rpx;
+  line-height: 1.5;
+}
+.btn {
+  width: 100%;
+  height: 80rpx;
+  line-height: 80rpx;
   border-radius: 20rpx;
+  font-size: 28rpx;
   border: none;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
-
-  &::after {
-    border: none;
-  }
-
-  &:active {
-    background: #fff5f5;
-  }
+  margin-top: 8rpx;
+  &.ghost { background: #f1f5f9; color: #0f172a; }
+  &.danger { background: #fee2e2; color: #b91c1c; }
 }
 </style>

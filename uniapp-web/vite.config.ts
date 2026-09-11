@@ -3,7 +3,7 @@ import uni from '@dcloudio/vite-plugin-uni'
 import { resolve } from 'path'
 
 export default defineConfig({
-  base: '/uniapp-cramer/',
+  base: '/uniapp-yl/',
   plugins: [uni()],
   resolve: {
     alias: {
@@ -18,16 +18,6 @@ export default defineConfig({
         target: 'http://localhost:8022',
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/uniapp-api/, '')
-      },
-      // 腾讯天气 API 代理
-      '/tencent-weather': {
-        target: 'https://i.news.qq.com',
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/tencent-weather/, ''),
-        headers: {
-          'Referer': 'https://tianqi.qq.com/',
-          'Origin': 'https://tianqi.qq.com'
-        }
       }
     }
   }
