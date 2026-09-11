@@ -1,370 +1,143 @@
-# 小米 uni-app 后台管理系统
+# CoolCap 化疗头皮冷却冰帽系统（YL 分支）
 
-> 企业级后台管理系统 —— 基于 uni-app Vue3 + TypeScript（前端） + FastAPI + MySQL（后端）
+> 基于 uni-app Vue3 + TypeScript（前端）+ FastAPI + MySQL（后端）  
+> **YL 分支**：移动端冰帽治疗 APP + `YL_*` 医疗业务接口  
+> **master 分支**：原企业后台管理系统（前端仍可对接本后端旧接口）
 
-## 📦 项目结构
+## 分支说明
+
+| 分支 | 内容 |
+|------|------|
+| `master` | 原后台管理系统前端与文档（本 README/学习文档以 YL 为准，master 侧请以 master 文件为准） |
+| `YL` | CoolCap 冰帽 APP 前端重塑；后端同时兼容旧接口与 CoolCap 新接口 |
+
+两套前端可部署在同一后端 `uniapp-server` 上：
+
+- master 前端 → `/api/auth`、`/api/ent/*`、`/api/gold/*`、`/api/laptops/*` 等旧接口  
+- YL 前端 → `/api/auth` + `/api/coolcap/*`
+
+## 项目结构（YL）
 
 ```
 xiaomi-uniapp/
-├── uniapp-web/                 # 前端项目 (uni-app + Vue3 + TypeScript)
+├── uniapp-web/                    # 前端（CoolCap APP）
 │   ├── src/
-│   │   ├── api/                # 接口请求模块
-│   │   │   ├── auth.ts         # 登录/认证接口
-│   │   │   ├── entertainment.ts # 娱乐中心接口（游戏/音乐/视频/小说）
-│   │   │   ├── gold.ts         # 黄金预测接口
-│   │   │   ├── home.ts         # 首页接口
-│   │   │   ├── laptop.ts       # 笔记本接口
-│   │   │   ├── menu.ts         # 菜单接口
-│   │   │   ├── request.ts      # 请求封装（axios 拦截器）
-│   │   │   └── mock/           # Mock 数据
-│   │   ├── pages/              # 页面
-│   │   │   ├── camera/         # 相机页面
-│   │   │   ├── entertainment/  # 娱乐中心（游戏/音乐/视频/小说/15款小游戏）
-│   │   │   │   ├── games/      # Vue小游戏页面（共15款）
-│   │   │   │   │   ├── game2048.vue        # 2048数字合并
-│   │   │   │   │   ├── gomoku.vue          # 五子棋
-│   │   │   │   │   ├── match3.vue          # 消消乐
-│   │   │   │   │   ├── minesweeper.vue     # 扫雷
-│   │   │   │   │   ├── breakout.vue        # 打砖块
-│   │   │   │   │   ├── coin-catch.vue      # 接金币
-│   │   │   │   │   ├── snake.vue           # 贪吃蛇
-│   │   │   │   │   ├── whack-mole.vue      # 打地鼠
-│   │   │   │   │   ├── flappy-bird.vue     # 飞鸟穿越
-│   │   │   │   │   ├── sliding-puzzle.vue  # 数字拼图
-│   │   │   │   │   ├── balloon-shoot.vue   # 射击气球
-│   │   │   │   │   ├── flag-match.vue      # 国旗配对
-│   │   │   │   │   ├── checkers.vue        # 跳棋
-│   │   │   │   │   ├── chinese-chess.vue   # 中国象棋
-│   │   │   │   │   └── zjh-poker.vue       # 炸金花
-│   │   │   │   ├── index.vue   # 娱乐中心首页
-│   │   │   │   ├── game.vue    # 游戏中心
-│   │   │   │   ├── music.vue   # 音乐播放
-│   │   │   │   ├── video.vue   # 视频影音
-│   │   │   │   └── novel.vue   # 网络小说
-│   │   │   ├── home/           # 首页
-│   │   │   ├── gold/           # 黄金预测（价格走势/实时数据/智能预测）
-│   │   │   ├── laptop/         # 笔记本智能推荐
-│   │   │   ├── login/          # 登录页
-│   │   │   ├── menu/           # 菜单管理
-│   │   │   └── profile/        # 个人中心
-│   │   ├── App.vue             # 根组件
-│   │   ├── main.ts             # 入口文件
-│   │   ├── pages.json          # 页面路由配置
-│   │   └── manifest.json       # 应用配置
-│   ├── index.html
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── vite.config.ts
+│   │   ├── api/
+│   │   │   ├── request.ts         # 请求封装（mock 会话不因后端 401 踢出）
+│   │   │   ├── auth.ts            # 登录
+│   │   │   └── coolcap.ts         # 冰帽业务接口
+│   │   ├── pages/
+│   │   │   ├── login/             # 登录
+│   │   │   ├── home/              # 治疗首页（连接/开始/治疗历史）
+│   │   │   ├── monitor/           # 实时监控（热力图/曲线/露点）
+│   │   │   ├── protocol/          # 方案列表 + 编辑
+│   │   │   ├── archive/           # 档案列表 + 详情/导出/复现
+│   │   │   ├── alarm/             # 报警中心
+│   │   │   └── profile/           # 我的
+│   │   ├── components/            # 分区卡片、热力图、露点卡、返回按钮等
+│   │   └── services/              # Mock BLE、PID/协调/露点/安全、本地存储
+│   └── vite.config.ts             # base: /coolcap/
 │
-├── uniapp-server/              # 后端项目 (FastAPI + SQLAlchemy + MySQL)
-│   ├── models/                 # 数据库模型（含娱乐中心20张表）
-│   ├── routers/                # 路由模块
-│   │   ├── auth.py             # 认证路由
-│   │   ├── gold.py             # 黄金预测路由（实时数据/K线历史/4种预测算法）
-│   │   ├── menu.py             # 菜单路由
-│   │   ├── home.py             # 首页路由
-│   │   ├── profile.py          # 个人中心路由
-│   │   ├── log.py              # 日志路由
-│   │   ├── laptop.py           # 笔记本路由
-│   │   ├── game.py             # 游戏中心路由
-│   │   ├── music.py            # 音乐路由
-│   │   ├── video.py            # 视频路由
-│   │   ├── novel.py            # 小说路由
-│   │   └── ent_common.py       # 娱乐公共路由
-│   ├── schemas/                # 数据验证模型
-│   ├── services/               # 业务逻辑层
-│   ├── config.py               # 配置文件
-│   ├── database.py             # 数据库连接
-│   ├── main.py                 # 应用入口（含自动初始化/迁移）
-│   ├── init_entertainment.py   # 娱乐中心数据初始化脚本
-│   ├── requirements.txt        # Python 依赖
-│   ├── Dockerfile              # Docker 构建文件
-│   ├── docker-compose.yml      # Docker 编排配置
-│   └── .dockerignore           # Docker 忽略文件
+├── uniapp-server/                 # 后端（旧接口 + CoolCap）
+│   ├── models/
+│   │   ├── coolcap.py             # YL_PATIENT / YL_DEVICE / YL_PROTOCOL / YL_SESSION ...
+│   │   ├── user.py / log.py       # 认证与日志
+│   │   └── ...                    # master 旧模型仍保留（娱乐/黄金/笔记本等）
+│   ├── routers/
+│   │   ├── coolcap.py             # /api/coolcap/*
+│   │   ├── auth.py                # /api/auth/*
+│   │   └── ...                    # home/game/gold/laptop/weather/news 等旧路由
+│   ├── sql/YL_coolcap_tables.sql  # YL_ 表结构对照
+│   ├── scripts/init_yl_tables.py  # 建表脚本
+│   └── main.py                    # 同时挂载新旧路由
 │
-└── README.md
+├── deploy/                        # 上线 Nginx 与说明
+├── docs/compose/spec/             # CoolCap 设计文档
+└── coolcap-h5-dist.zip            # H5 生产包（如有）
 ```
 
-## 🚀 技术栈
-
-### 前端
-
-| 技术 | 说明 |
-|------|------|
-| [uni-app](https://uniapp.dcloud.net.cn/) | 跨平台应用框架 |
-| [Vue 3](https://vuejs.org/) | 渐进式 JavaScript 框架 |
-| [TypeScript](https://www.typescriptlang.org/) | 类型安全的 JavaScript 超集 |
-| [Vite](https://vitejs.dev/) | 下一代前端构建工具 |
-| [Sass](https://sass-lang.com/) | CSS 预处理器 |
-
-### 后端
-
-| 技术 | 说明 |
-|------|------|
-| [FastAPI](https://fastapi.tiangolo.com/) | 高性能 Python Web 框架 |
-| [SQLAlchemy](https://www.sqlalchemy.org/) | Python ORM 框架 |
-| [MySQL](https://www.mysql.com/) | 关系型数据库 |
-| [Pydantic](https://docs.pydantic.dev/) | 数据验证和设置管理 |
-| [python-jose](https://github.com/mpdavis/python-jose) | JWT 令牌生成与验证 |
-
-## ✨ 功能特性
+## 功能特性（CoolCap）
 
 | 模块 | 说明 |
 |------|------|
-| 首页 | 数据概览、快捷操作、最近动态 |
-| 菜单管理 | 菜单的增删改查 |
-| **黄金预测** | 黄金价格走势分析与智能预测，包含以下功能： |
-| 　├ 实时金价 | 上海黄金交易所、纽约期货、伦敦现货实时数据 |
-| 　├ 价格走势 | CSS折线图展示历史价格趋势（支持7/14/30天） |
-| 　├ 智能预测 | 4种算法（移动平均/指数平滑/线性回归/集成模型） |
-| 　└ 预测记录 | 历史预测记录与置信度评估 |
-| 笔记本智能推荐 | 根据需求智能推荐笔记本电脑 |
-| 相机拍照 | 调用设备摄像头拍照 |
-| **娱乐中心** | 综合线上娱乐平台，包含以下四个子模块： |
-| 　├ 游戏中心 | 15款Vue原生小游戏，免下载即点即玩，分类筛选、排行榜 |
-| 　├ 音乐播放 | 在线音乐播放、歌单推荐、底部播放器、热歌榜 |
-| 　├ 视频影音 | 影视剧/电影/综艺/动漫浏览、热播推荐、多维度筛选 |
-| 　└ 网络小说 | 网文阅读、编辑推荐、人气排行榜、分类浏览 |
+| 登录 | 优先真实 `/api/auth/login`，失败回退本地 mock |
+| 治疗 | BLE 连接（模拟）、开始/结束、全头均匀度、治疗历史入库展示 |
+| 监控 | 6 区头皮侧温度热力图、功率、趋势曲线、露点防护 |
+| 方案 | 内置模板 + 自定义阶段（时长/目标温度/功率上限） |
+| 档案 | 列表搜索、详情回放、JSON/CSV 导出、一键复现 |
+| 报警 | 信息/警告/严重分级；冻伤/热端/传感器/脱离/过流等 |
+| 我的 | 环境温湿度模拟、安全包络只读、退出登录 |
 
-### 🎮 游戏中心小游戏列表（共15款）
+### 控制算法特点（APP 侧呈现）
 
-| 游戏 | 类型 | 说明 |
-|------|------|------|
-| 2048数字合并 | 益智休闲 | 经典2048，滑动方块合并数字 |
-| 五子棋 | 棋牌对战 | 双人对战，支持悔棋 |
-| 消消乐 | 休闲消除 | 8×8三消，限时30步 |
-| 扫雷经典版 | 益智策略 | 9×9棋盘，10颗雷，长按插旗 |
-| 打砖块 | 动作街机 | 复古弹球，多关卡进阶 |
-| 接金币 | 休闲反应 | 限时60秒，接金币躲炸弹 |
-| 贪吃蛇 | 经典怀旧 | 三档难度，方格贪吃蛇 |
-| 打地鼠 | 解压休闲 | 限时60秒，击打地鼠得分 |
-| 飞鸟穿越 | 躲避闯关 | Flappy Bird同款，躲避管道 |
-| 数字拼图 | 益智闯关 | 3×3数字滑块，星级评分 |
-| 射击气球 | 射击休闲 | 限时90秒，射击气球得分 |
-| 国旗配对 | 记忆益智 | 翻牌配对，4×4/5×5双难度 |
-| 跳棋 | 棋牌策略 | 六角跳棋，双人对战 |
-| 中国象棋 | 棋牌策略 | 国标象棋，完整走棋规则 |
-| 炸金花 | 棋牌卡牌 | 虚拟积分版，跟注/加注/比牌 |
+1. **头皮侧直接测温**（主控变量，非 TEC 冷端）  
+2. **多区独立 PID** 状态：idle / ramp / hold / protect / fault  
+3. **全头温差协调**：偏高区追加补偿，均匀度徽章  
+4. **基于露点的凝露防护**：目标 ≥ 露点 + 余量，自动钳制  
+5. **多层次安全**：冻伤下限、热端过温、传感器故障、接触异常、过流  
 
-## 🗄️ 数据库设计
+## 技术栈
 
-### 黄金预测模块（2张表）
+### 前端（YL）
+- uni-app + Vue 3 + TypeScript + Vite  
+- uview-plus  
+- Canvas 热力图 / 趋势图（本地组件；未强绑 echarts 也可运行）
 
-| 表名 | 说明 |
-|------|------|
-| gold_prices | 黄金历史价格（日期、CNY/USD价格、开盘/最高/最低/收盘、成交量） |
-| gold_predictions | 预测记录（用户ID、预测日期、预测价格、算法类型、置信度、趋势） |
+### 后端
+- FastAPI + SQLAlchemy + MySQL（库：`study_uniapp`）  
+- JWT 认证  
+- CoolCap 新表前缀：**`YL_`**
 
-### 娱乐中心（20张表）
+## 数据库（YL_）
 
-娱乐中心共设计20张数据表，通过 `main.py` 启动时自动建表和初始化：
+| 表 | 用途 |
+|----|------|
+| `YL_PATIENT` | 患者 |
+| `YL_DEVICE` | 设备 |
+| `YL_PROTOCOL` / `YL_PROTOCOL_STAGE` | 治疗方案 |
+| `YL_SAFETY_PROFILE` | 安全包络 |
+| `YL_SESSION` / `YL_SESSION_POINT` / `YL_SESSION_ZONE` | 治疗档案与采样 |
+| `YL_ALARM` | 报警 |
+| `YL_ENV_SAMPLE` | 环境采样 |
+| `YL_CONTROL_COMMAND` | 指令审计 |
 
-| 模块 | 核心表 | 说明 |
-|------|--------|------|
-| 公共 | ent_category, ent_banner, ent_favorite, ent_history, ent_feedback | 分类/轮播图/收藏/历史/反馈 |
-| 游戏 | ent_game, ent_game_screenshot, ent_game_play_record | 游戏/截图/游玩记录 |
-| 音乐 | ent_song, ent_artist, ent_album, ent_playlist, ent_playlist_song | 歌曲/歌手/专辑/歌单 |
-| 视频 | ent_video, ent_video_episode | 视频/分集 |
-| 小说 | ent_novel, ent_novel_volume, ent_novel_chapter | 小说/卷/章节 |
-
-## 🛠️ 本地开发
-
-### 环境要求
-
-- **Node.js** >= 16
-- **Python** >= 3.11
-- **MySQL** >= 5.7
-
-### 前端启动
+建表：
 
 ```bash
-# 进入前端目录
-cd uniapp-web
+# Python 建议：D:\python\Python\Python310\python.exe
+cd uniapp-server
+python scripts/init_yl_tables.py
+# 或启动 main.py 时 create_all
+```
 
-# 安装依赖
+## 本地启动
+
+```bash
+# 后端
+cd uniapp-server
+python -m uvicorn main:app --host 0.0.0.0 --port 8022
+
+# 前端（开发）
+cd uniapp-web
 npm install
-
-# 启动 H5 开发服务器
 npm run dev:h5
-```
+# http://localhost:5173/coolcap/
 
-浏览器访问 `http://localhost:5173/uniapp-cramer/`
-
-### 后端启动
-
-```bash
-# 进入后端目录
-cd uniapp-server
-
-# 创建虚拟环境（推荐）
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Linux/Mac
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 启动服务（首次启动自动建表+初始化数据）
-python main.py
-```
-
-API 服务运行在 `http://localhost:8022`，API 文档地址：`http://localhost:8022/docs`
-
-## 📋 可用脚本
-
-### 前端 (uniapp-web)
-
-| 命令 | 说明 |
-|------|------|
-| `npm run dev:h5` | H5 开发模式 |
-| `npm run build:h5` | H5 生产打包 |
-| `npm run dev:mp-weixin` | 微信小程序开发模式 |
-| `npm run build:mp-weixin` | 微信小程序生产打包 |
-| `npm run dev:app` | App 开发模式 |
-| `npm run build:app` | App 生产打包 |
-
-## 🚢 部署
-
-### 前端部署
-
-前端单独部署，打包命令：
-
-```bash
-cd uniapp-web
+# 前端（生产）
 npm run build:h5
+# 产物：uniapp-web/dist/build/h5/
 ```
 
-将 `uniapp-web/dist/build/h5/` 目录下的文件部署到 Nginx 或任意静态文件服务器。
+演示登录（YL）：`admin` / 任意 ≥4 位密码（后端可用时会优先走真实登录）。
 
-**Nginx 配置示例：**
+## 上线要点
 
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
+1. 前端 `base` 为 `/coolcap/`  
+2. Nginx 将 `/uniapp-api/` 反代到后端 `:8022`  
+3. 详见 `deploy/README.md`、`deploy/nginx-coolcap.conf`  
+4. 生产请修改 `config.py` 的 `SECRET_KEY`
 
-    root /path/to/uniapp-web/dist/build/h5;
-    index index.html;
+## 设计文档
 
-    location /uniapp-cramer/ {
-        try_files $uri $uri/ /uniapp-cramer/index.html;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8022/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
-```
-
-### 后端部署
-
-#### 方式一：手动部署
-
-```bash
-cd uniapp-server
-
-# 创建虚拟环境（推荐）
-python -m venv venv
-source venv/bin/activate
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 直接使用 python 启动（内部已集成 uvicorn）
-python main.py
-```
-
-##### 使用 pm2 管理进程（推荐生产环境）
-
-```bash
-# 安装 pm2（如未安装）
-npm install -g pm2
-
-# 使用 pm2 启动 Python 服务
-pm2 start main.py --name uniapp-api --interpreter ~/venv/bin/python -- --host 0.0.0.0 --port 8022
-
-# 常用 pm2 命令
-pm2 list              # 查看所有进程
-pm2 logs uniapp-api   # 查看日志
-pm2 restart uniapp-api # 重启服务
-pm2 stop uniapp-api   # 停止服务
-pm2 delete uniapp-api # 删除进程
-
-# 设置开机自启
-pm2 save
-pm2 startup
-```
-
-#### 方式二：Docker 容器部署（推荐）
-
-将 `uniapp-server/` 目录上传到服务器，然后执行：
-
-```bash
-cd uniapp-server
-docker-compose up -d --build
-```
-
-```bash
-# 在源服务器保存镜像
-docker save -o xiaomi-uniapp-api.tar xiaomi-uniapp-api
-
-# 在目标服务器加载镜像
-docker load -i xiaomi-uniapp-api.tar
-
-# 在目标服务器启动容器（对外端口 8022）
-docker run -d \
-  --name uniapp-api \
-  -p 8022:8022 \
-  -e DB_HOST=120.48.35.111 \
-  -e DB_PORT=3306 \
-  -e DB_USER=root \
-  -e DB_PASSWORD=123321Frq \
-  -e DB_NAME=study_uniapp \
-  --restart always \
-  uniapp-server_api:latest
-```
-
-常用 Docker 命令：
-
-```bash
-# 查看容器状态
-docker ps
-
-# 查看日志
-docker logs xiaomi-uniapp-api
-
-# 停止服务
-docker-compose down
-
-# 重新构建并启动
-docker-compose up -d --build
-```
-
-#### 访问地址
-
-| 服务 | 地址 |
-|------|------|
-| 后端 API | `http://服务器IP:8022/api/` |
-| API 文档 | `http://服务器IP:8022/docs` |
-
-### 环境变量配置
-
-后端支持通过 `.env` 文件或环境变量覆盖默认配置：
-
-| 变量名 | 说明 | 默认值 |
-|--------|------|--------|
-| `DB_HOST` | 数据库地址 | `localhost` |
-| `DB_PORT` | 数据库端口 | `3306` |
-| `DB_USER` | 数据库用户名 | `root` |
-| `DB_PASSWORD` | 数据库密码 | - |
-| `DB_NAME` | 数据库名 | `study_uniapp` |
-| `SECRET_KEY` | JWT 密钥 | - |
-| `HOST` | 服务监听地址 | `0.0.0.0` |
-| `PORT` | 服务端口 | `8022` |
-
-## 📄 License
-
-MIT
+- `docs/compose/spec/coolcap-mobile.md`  
+- 学习文档：`学习.md`  
