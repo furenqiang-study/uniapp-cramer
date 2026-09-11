@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # 数据库配置
-    DB_HOST: str = "120.48.35.111"
+    DB_HOST: str = "120.48.35.53"
     DB_PORT: int = 3306
     DB_USER: str = "root"
     DB_PASSWORD: str = "123321Frq"

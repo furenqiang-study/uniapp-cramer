@@ -8,7 +8,7 @@ services:
     ports:
       - "8022:8022"
     environment:
-      - DB_HOST=120.48.35.111
+      - DB_HOST=120.48.35.53
       - DB_PORT=3306
       - DB_USER=root
       - DB_PASSWORD=123321Frq
